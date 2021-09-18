@@ -26,7 +26,14 @@ from DFRobot_Oxygen import *
 from machine import PWM
 from _pybytes_config import PybytesConfig
 
-#health4everyoneURL="http://192.168.1.12:8080"
+#VOC index over 200 means you need to ventilate room
+#since it may spike we used a counter to set in in alarm only after 5 checks
+VOC_LIMIT=200
+VOC_COUNT=5
+#Oxygen over 23% means something is leaking so you need to ventilate
+#Check also oxygen sources 
+OXYGEN_LIMIT=23.0
+
 health4everyoneURL="http://patientmonitor.health4everyone.org"
 collectTimestamp=""
 rtc = machine.RTC()
@@ -98,12 +105,13 @@ uuid = conf['device_id']
 print("Device UUID:"+str(uuid))
 
 
+#checking if device is registered
 check = check_health4everyone(uuid)
+#if not registered we register the device using pybytes uuid
 if( check.text=="false" ):
     print("Device not registered")
     register = register_health4everyone(uuid,"Pybytes%20"+uuid,"Vent%26Fire%20Monitor",uuid);
     register.close()
-
 check.close()
 
 reportInterval = 60
@@ -121,12 +129,21 @@ while True:
   voc_data = voc.get_voc_index()
   oxygen_data = oxygen.get_oxygen_data(COLLECT_NUMBER);
   alarm = 0
-  if oxygen_data>23: #oxygen alarm
+  if oxygen_data>OXYGEN_LIMIT: #oxygen alarm
       alarm = alarm+1
       print("Oxygen in alarm")
-  if voc_data>20000: #voc alarm
+  if voc_data>VOC_LIMIT and voc_count>VOC_COUNT: #voc alarm  
       alarm = alarm+66
       print("VOC in alarm")
+      voc_count=voc_count+1
+  elif voc_data>VOC_LIMIT:
+      voc_count=voc_count+1
+  else
+      voc_count=0;
+      
+      
+
+else:
 
   if alarm==1 or alarm==3:
       alarmVal = 1 #full buzz
@@ -153,25 +170,18 @@ while True:
       year, month, day, hour, minute, seconds, usecond, pp = rtc.now()
       collectTimestamp="{:04d}-{:02d}-{:02d}%20{:02d}%3A{:02d}%3A{:02d}".format(year, month, day, hour, minute, seconds)
 
-      pybytes.send_signal(1, temperature)
       r=send_health4everyone(uuid,"temperature", temperature, collectTimestamp)
       r.close();
-      pybytes.send_signal(2, humidity )
       r=send_health4everyone(uuid,"humidity", humidity, collectTimestamp)
       r.close();
-      pybytes.send_signal(3, pressure )
       r=send_health4everyone(uuid,"pressure", pressure, collectTimestamp)
       r.close();
-      pybytes.send_signal(4, light)
       r=send_health4everyone(uuid,"light", light, collectTimestamp)
       r.close();
-      pybytes.send_signal(5, temp_2nd)
       r=send_health4everyone(uuid,"temp_2nd", temp_2nd, collectTimestamp)
       r.close();
-      pybytes.send_signal(6, voc_data)
       r=send_health4everyone(uuid,"VOC", voc_data, collectTimestamp)
       r.close();
-      pybytes.send_signal(7, oxygen_data)
       r=send_health4everyone(uuid,"oxygen", oxygen_data, collectTimestamp)
       r.close();
 
