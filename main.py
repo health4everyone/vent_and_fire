@@ -31,7 +31,7 @@ from _pybytes_config import PybytesConfig
 VOC_LIMIT=200
 VOC_COUNT=5
 #Oxygen over 23% means something is leaking so you need to ventilate
-#Check also oxygen sources 
+#Check also oxygen sources
 OXYGEN_LIMIT=23.0
 
 health4everyoneURL="http://patientmonitor.health4everyone.org"
@@ -132,18 +132,14 @@ while True:
   if oxygen_data>OXYGEN_LIMIT: #oxygen alarm
       alarm = alarm+1
       print("Oxygen in alarm")
-  if voc_data>VOC_LIMIT and voc_count>VOC_COUNT: #voc alarm  
+  if voc_data>VOC_LIMIT and voc_count>VOC_COUNT: #voc alarm
       alarm = alarm+66
       print("VOC in alarm")
       voc_count=voc_count+1
   elif voc_data>VOC_LIMIT:
       voc_count=voc_count+1
-  else
+  else:
       voc_count=0;
-      
-      
-
-else:
 
   if alarm==1 or alarm==3:
       alarmVal = 1 #full buzz
